@@ -1,5 +1,6 @@
-org 0x7C00   ; add 0x7C00 to label addresses
 bits 16      ; tell the assembler we want 16 bit code
+
+extern _entry
 
 ; setup stack
 ; mov sp, 0x5000
@@ -100,11 +101,7 @@ gdtPtr:
     dw gdt_end - myGdt
     dq myGdt
 
-
 bits 32 ; god damn forgot to specify this
 main:
-    mov al, 'A'
-    mov ah, 0x0F
-    mov [0xb8000], ax
-
+    call _entry
     jmp $ 
