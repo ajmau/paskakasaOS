@@ -4,10 +4,10 @@ bits 16      ; tell the assembler we want 16 bit code
 ; setup stack
 ; mov sp, 0x5000
 
-; save drive number
+; save drive number wich is in dl after boot
 mov [driveNumber], dl
 
- lea si, [msg]
+lea si, [msg] ; use lea to calculate address. mov would read a value from [msg] address
 call print_string
 
 mov ah, 2
@@ -57,3 +57,5 @@ stage2:
 
 stage2msg:
     db 'BOOTMGR stage2 loaded',0
+
+myGdt:
