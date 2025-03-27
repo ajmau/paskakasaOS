@@ -41,7 +41,7 @@ print_string:
     ret
 
 msg:
-    db 'Hello from real mode',0x0A,0x0D,0
+    db 'Hello from real mode',0x0A,0x0D,0 ; 0x0A, 0xD newline and return
 
 driveNumber:
     times 1 db 0
@@ -53,9 +53,58 @@ stage2:
     lea si, [stage2msg]
     call print_string
 
+    cli 
+    ; enable A20 line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    ; load gdt
+    lgdt [gdtPtr]
+
+    ; enable pmode bit in cr0
+    mov eax, cr0
+    or al, 1
+    mov cr0, eax
+
+    jmp 0x08:main
+
     jmp $
 
 stage2msg:
     db 'BOOTMGR stage2 loaded',0
 
 myGdt:
+    ; null entry
+    dd 0x0 ; dd double = 4 bytes
+    dd 0x0
+
+    ; code segment
+    dw 0xFFFF ; limit bottom
+    dw 0x0000 ; base bottom
+    db 0x0    ; more base
+    db 0x9A   ; access byte
+    db 0xFC   ; rest of limit & flags
+    db 0x0    ; rest  of base
+
+    ; data segment
+    dw 0xFFFF ; limit bottom
+    dw 0x0000 ; base bottom
+    db 0x0    ; more base
+    db 0x92   ; access byte
+    db 0xFC   ; rest of limit & flags
+    db 0x0    ; rest  of base
+gdt_end:
+
+gdtPtr:
+    dw gdt_end - myGdt
+    dq myGdt
+
+
+bits 32 ; god damn forgot to specify this
+main:
+    mov al, 'A'
+    mov ah, 0x0F
+    mov [0xb8000], ax
+
+    jmp $ 
