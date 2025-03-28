@@ -35,34 +35,7 @@ void log(char *msg) {
         msg++;
     }
 }
-/*
-GDTentry nullEntry = {
-    .limit = 0x0,
-    .base_bottom = 0x0,
-    .base_middle = 0x0,
-    .access = 0x0,
-    .limit_and_flags = 0x0,
-    .base_top = 0x0
-};
 
-GDTentry codeEntry = {
-    .limit = 0xFFFF,
-    .base_bottom = 0x0000,
-    .base_middle = 0x0,
-    .access = 0x9A,
-    .limit_and_flags = 0xFC,
-    .base_top = 0x0
-};
-
-GDTentry dataEntry = {
-    .limit = 0xFFFF,
-    .base_bottom = 0x0000,
-    .base_middle = 0x0,
-    .access = 0x92,
-    .limit_and_flags = 0xFC,
-    .base_top = 0x0
-};
-*/
 GDTentry GDT[3] = {
     // null
      {
@@ -93,24 +66,11 @@ GDTentry GDT[3] = {
     },
 };
 
-/*
-GDTdescriptor GDTdesc = {
-        .size = sizeof(GDTentry)*3,
-        .offset = (uint64_t)GDT
-};
-*/
-
 GDTdescriptor GDTdesc;
 
 __attribute__((aligned(4096))) uint64_t pml4[512];
 __attribute__((aligned(4096))) uint64_t pud[512];
 __attribute__((aligned(4096))) uint64_t pmd[512];
-uint64_t  pt[512];
-
-#define PAGE_BIT_P_PRESENT (1<<0)
-#define PAGE_BIT_RW_WRITABLE (1<<1)
-#define PAGE_BIT_US_USER (1<<2)
-#define PAGE_XD_NX (1<<63)
 
 void huge_map_2mb()
 {
