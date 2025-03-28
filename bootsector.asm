@@ -68,6 +68,10 @@ stage2:
     or al, 1
     mov cr0, eax
 
+    ; needed so bochs wont crash. TODO: investigate later
+    mov ax, 0x10
+    ;mov ds, ax
+
     jmp 0x08:main
 
     jmp $
