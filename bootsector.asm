@@ -12,7 +12,7 @@ lea si, [msg] ; use lea to calculate address. mov would read a value from [msg] 
 call print_string
 
 mov ah, 2
-mov al, 1 ; number of sectors
+mov al, 4 ; number of sectors
 mov ch, 0 ; cylinder (first = 0)
 mov cl, 2 ; sector (first = 1)
 mov dh, 0 ; head number

@@ -2,8 +2,9 @@ bootsector:
 	nasm bootsector.asm -f elf32 -o bootsector.o
 
 bootloader: bootsector
-	clang -g -ffreestanding -nostdlib -target i386-unknown-none -c -o boot.o boot.c
-	ld -m elf_i386 -T linker.ld -o final.elf bootsector.o boot.o
+	nasm enable_paging.asm -f elf32 -o enable_paging.o
+	clang -m32 -g -ffreestanding -nostdlib -target x86_64-unknown-none -c -o boot.o boot.c
+	ld -m elf_i386 -T linker.ld -o final.elf bootsector.o boot.o enable_paging.o
 	objcopy -O binary final.elf final.bin
 	dd if=final.bin of=c.img bs=512 seek=0 conv=notrunc
 
