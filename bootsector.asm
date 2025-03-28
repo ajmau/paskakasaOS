@@ -68,11 +68,13 @@ stage2:
     or al, 1
     mov cr0, eax
 
-    ; needed so bochs wont crash. TODO: investigate later
+    ; ds needs to point to GDT data entry. Qemu somehow works without this.
     mov ax, 0x10
-    ;mov ds, ax
+    mov ds, ax
 
-    jmp 0x08:main
+    ; long jump
+    ; this sets cs to 0x08 (GDT code entry) and jumps to C code using that
+    jmp 0x08:callC
 
     jmp $
 
@@ -106,6 +108,6 @@ gdtPtr:
     dq myGdt
 
 bits 32 ; god damn forgot to specify this
-main:
+callC:
     call _entry
-    jmp $ 
+    jmp $
