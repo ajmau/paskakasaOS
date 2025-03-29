@@ -14,4 +14,5 @@ SECTIONS {
     .bss : {
         *(.bss)           /* BSS section for uninitialized data */
     }
+    _end = .;
 }

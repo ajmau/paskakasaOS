@@ -1,6 +1,6 @@
 bits 16      ; tell the assembler we want 16 bit code
 
-extern _entry
+extern _setup_lmode
 
 ; setup stack
 ; mov sp, 0x5000
@@ -12,7 +12,7 @@ lea si, [msg] ; use lea to calculate address. mov would read a value from [msg] 
 call print_string
 
 mov ah, 2
-mov al, 4 ; number of sectors
+mov al, 2 ; number of sectors
 mov ch, 0 ; cylinder (first = 0)
 mov cl, 2 ; sector (first = 1)
 mov dh, 0 ; head number
@@ -21,10 +21,19 @@ mov dl, [driveNumber]
 mov bx, 0x7e00
 int 0x13
 
-;jmp [0x7e00] ; doesn't work because of org 0x7c00 [would be 0x7c00 + 0x7c00]
-jmp stage2
+mov ah, 2
+mov al, 1
+mov ch, 0
+mov cl, 4
+mov dh, 0
+mov dl, [driveNumber]
+mov bx, 0xd000
+int 0x13
 
+;jmp [0x7e00] ; doesn't work because of org 0x7c00 [would be 0x7c00 + 0x7c00]
+jmp enable_pmode
 jmp $
+
 ; si: address of string
 print_string:
     lodsb ; load byte from si to al, incease si
@@ -50,7 +59,7 @@ driveNumber:
 times 510-($-$$) db 0
 dw 0AA55h
 
-stage2:
+enable_pmode:
     lea si, [stage2msg]
     call print_string
 
@@ -109,5 +118,5 @@ gdtPtr:
 
 bits 32 ; god damn forgot to specify this
 callC:
-    call _entry
+    call _setup_lmode
     jmp $

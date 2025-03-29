@@ -3,7 +3,7 @@
 
 extern void enable_pae();
 extern void switch_to_64(uint64_t, uint64_t);
-
+extern void* _end;
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -21,7 +21,7 @@ typedef struct GDTentry {
 
 typedef struct GDTdescriptor {
     uint16_t size;
-    uint32_t offset;
+    uint64_t offset;
 } GDTdescriptor;
 
 
@@ -49,7 +49,7 @@ GDTentry GDT[3] = {
     // code
     {
     .limit = 0xFFFF,
-    .base_bottom = 0x0000,
+    .base_bottom = 0x0,
     .base_middle = 0x0,
     .access = 0x9A,
     .limit_and_flags = 0xCF,
@@ -87,11 +87,11 @@ void huge_map_2mb()
 
 void setupGDT(GDTdescriptor *desc)
 {
-        desc->size = sizeof(GDT);
+        desc->size = sizeof(GDT) - 1;
         desc->offset = (uint64_t)GDT;
 }
 
-void _entry()
+void _setup_lmode()
 {
     char *vidmem = (char*)0xb8000;
     char *msg = "HELLO from protected mode";
@@ -109,6 +109,7 @@ void _entry()
         vidmem++;
         i++;
     }
+
     switch_to_64((uint64_t)&pml4, (uint64_t)&GDTdesc);
 
     log("Log message 1\n");
