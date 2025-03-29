@@ -1,3 +1,4 @@
+[org 0x7c00]
 bits 16      ; tell the assembler we want 16 bit code
 
 extern _setup_lmode
@@ -22,7 +23,7 @@ mov bx, 0x7e00
 int 0x13
 
 mov ah, 2
-mov al, 1
+mov al, 2
 mov ch, 0
 mov cl, 4
 mov dh, 0
@@ -30,9 +31,10 @@ mov dl, [driveNumber]
 mov bx, 0xd000
 int 0x13
 
-;jmp [0x7e00] ; doesn't work because of org 0x7c00 [would be 0x7c00 + 0x7c00]
-jmp enable_pmode
-jmp $
+xchg bx, bx
+jmp 0x7e00 ; doesn't work because of org 0x7c00 [would be 0x7c00 + 0x7c00]
+;jmp $
+;jmp enable_pmode
 
 ; si: address of string
 print_string:
@@ -56,67 +58,6 @@ msg:
 driveNumber:
     times 1 db 0
 
-times 510-($-$$) db 0
-dw 0AA55h
+;times 510-($-$$) db 0
+;dw 0AA55h
 
-enable_pmode:
-    lea si, [stage2msg]
-    call print_string
-
-    cli 
-    ; enable A20 line
-    in al, 0x92
-    or al, 2
-    out 0x92, al
-
-    ; load gdt
-    lgdt [gdtPtr]
-
-    ; enable pmode bit in cr0
-    mov eax, cr0
-    or al, 1
-    mov cr0, eax
-
-    ; ds needs to point to GDT data entry. Qemu somehow works without this.
-    mov ax, 0x10
-    mov ds, ax
-
-    ; long jump
-    ; this sets cs to 0x08 (GDT code entry) and jumps to C code using that
-    jmp 0x08:callC
-
-    jmp $
-
-stage2msg:
-    db 'BOOTMGR stage2 loaded',0
-
-myGdt:
-    ; null entry
-    dd 0x0 ; dd double = 4 bytes
-    dd 0x0
-
-    ; code segment
-    dw 0xFFFF ; limit bottom
-    dw 0x0000 ; base bottom
-    db 0x0    ; more base
-    db 0x9A   ; access byte
-    db 0xFC   ; rest of limit & flags
-    db 0x0    ; rest  of base
-
-    ; data segment
-    dw 0xFFFF ; limit bottom
-    dw 0x0000 ; base bottom
-    db 0x0    ; more base
-    db 0x92   ; access byte
-    db 0xFC   ; rest of limit & flags
-    db 0x0    ; rest  of base
-gdt_end:
-
-gdtPtr:
-    dw gdt_end - myGdt
-    dq myGdt
-
-bits 32 ; god damn forgot to specify this
-callC:
-    call _setup_lmode
-    jmp $
