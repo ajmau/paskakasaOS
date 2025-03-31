@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0xd000;           /* Set the base address to 0x7C00 */
+    . = 0x100000;           /* Set the base address to 0x7C00 */
 
     .text : {
         *(.text)          /* Place all text sections (code) here */

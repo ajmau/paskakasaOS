@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #define DATA         0x1F0
 #define ERROR        0x1F1
@@ -14,6 +15,7 @@
 
 #define PARTITION_START 0x800
 
+uint32_t read_nextcluster(uint32_t *fattable, uint32_t cluster);
 uint16_t read2bytes(uint8_t *bytes);   
 uint32_t read4bytes(uint8_t *bytes);   
 uint64_t read8bytes(uint8_t *bytes);   
@@ -23,6 +25,7 @@ static inline uint16_t inw(uint16_t port);
 //void read_data(uint8_t *, uint8_t, uint8_t, uint8_t);
 void read_data(uint8_t *, uint32_t);
 void log(char *msg);
+void* memmove(void* dstptr, const void* srcptr, size_t size);
 
 // bios parameter block
 struct BPB {
@@ -50,16 +53,50 @@ struct BPB {
 
 struct BPB bpb;
 
+struct sfn {
+    char name[11];
+    char attributes;
+    char reserved;
+    char creation_seconds;
+    char created_time[2];
+    char created_date[2];
+    char last_accessed[2];
+    uint16_t cluster_high_bits;
+    char modification_time[2];
+    char modification_date[2];
+    uint16_t cluster_low_bits;
+    char size[4];
+};
+
+struct lfn {
+    char orderno;
+    char start[10];
+    char attribute;
+    char long_entry_type;
+    char checksum;
+    char mid[12];
+    char zero1;
+    char zero2;
+    char end[4];
+};  
+
+struct sfn sfn;
+struct lfn lfn;
+
+int clusters = 0;
+
 void parse_bpb(uint8_t *bytes, struct BPB *bpb);
 __attribute__((noreturn))
 void loader_main() {
+
+    clusters = 0;
 
     char *vidmem = (char*)0xb8000;
     *vidmem = 'B';
     log("mitäs nyt sitten");
 
     uint8_t data[512];
-    uint8_t rootdir[512];
+    uint32_t fat[128];
 
     int i = 0;
     for (i = 0; i < 512; i++) {
@@ -69,8 +106,11 @@ void loader_main() {
     read_data(&data, PARTITION_START);
 
     parse_bpb(&data, &bpb);
-
-    read_data(&rootdir, PARTITION_START + bpb.reserverd_sectors + (bpb.sectors_per_fat * bpb.number_of_fats));
+    for (i = 0; i < 512; i++) {
+        data[i] = 0;
+    }
+    read_data(&data, PARTITION_START + bpb.reserverd_sectors + (bpb.sectors_per_fat * bpb.number_of_fats));
+    read_data(&fat, PARTITION_START + bpb.reserverd_sectors);
 
     char filename[26];
     i = 0;
@@ -80,87 +120,101 @@ void loader_main() {
     char filedata[512];
     i = 0;
     uint32_t fileloc;
+    int entries = 0;
     for (i = 0; i < 512; i+=32) {
-        uint32_t entry = rootdir[i] | rootdir[i+1] << 8 | rootdir[2] << 16 | rootdir[3] << 24;
-        if (rootdir[i] == 0) {
+        //uint32_t entry = data[i] | data[i+1] << 8 | data[2] << 16 | data[3] << 24;
+
+        if (data[i] == 0) {
+            log("No more files\n");
             break;
         }
 
-        if (rootdir[i+11] = 0x10) {
-            log("Found directory");
+        if (data[i] == 0xe5) {
+            log("Unused directory entry\n");
+            continue;;
         }
 
-        if (rootdir[i] == 0xE5) {
-            break;
-        }
-
-        if (rootdir[i] == 0x85) {
-            asm volatile ("hlt");
-        }
-
-        if (rootdir[i+11] == 0x0f) {
-            /*
-            int x=0;
-            for(x=0; x<10; x++) {
-                filename[x]= rootdir[i+1+x];
-            }
-            */
-
+        if (data[i+11] == 0x0f) {
+            memmove(&lfn, &data[i], 32);
         } else {
-            int x;
-            for (x = 0; x < 13; x++) {
-                if (rootdir[i+x] == 0x20) {
-                    break;
-                }
-                filename[x] = rootdir[i+x];
-            }
-            filename[x] = '.';
-            filename[x+1] = rootdir[i+x+2];
-            filename[x+2] = rootdir[i+x+3];
-            filename[x+3] = rootdir[i+x+4];
-            filename[11]  = '\n';
+            memmove(&sfn, &data[i], 32);
+        }
+        int limit = 32;
+        
 
-            uint8_t cluster = rootdir[i+26];
-            uint8_t size = rootdir[i+28];
+        entries++;
 
-            fileloc = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (cluster - 2) * bpb.sectors_per_cluster;
-
+        if (data[i+11] = 0x10) {
+            log("Found directory\n");
         }
 
+        if (data[i] == 0xE5) {
+            break;
+        }
 
-
-        asm volatile ("nop");
     }
 
-    read_data(&filedata, fileloc);
+    uint32_t cluster = sfn.cluster_low_bits | (sfn.cluster_high_bits << 16) & 0x00FF; 
+    uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (cluster - 2) * bpb.sectors_per_cluster;
 
+    read_data((uint8_t*)0x100000, clusterdataLBA);
+
+    uint32_t next  =  cluster;
+    // calculate first cluster
+    while (1) {
+    next = read_nextcluster(&fat, next);
+    if (next == 0) {
+        break;
+    }
+    uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (next - 2) * bpb.sectors_per_cluster;
+
+
+    read_data(&filedata, clusterdataLBA);
+    log(filedata);
+/*
     int length = 13;
     i = 0;
     while (i < length) {
         *vidmem++ = filename[i];
         *vidmem++ = 0x0e;
         i++;
-    }
+    }*/
 
-    *vidmem++ = ':';
-    *vidmem++ = 0x0e;
-    vidmem+=144;
-    *vidmem = 'X';
+//    *vidmem++ = ':';
+//    *vidmem++ = 0x0e;
+//    vidmem+=140;
+//    *vidmem = 'X';
     i=0;
-    while (i < length) {
+    while (filedata[i] != 0x0) {
         if (filedata[i] != '\n') {
         *vidmem++ = filedata[i];
         *vidmem++ = 0xd;
         i++;
+        } else {
+            i++;
         }
     }
 
-    log("Filename: ");
-    log(filename);
-    //read_data(&rootdir, 0x0806 + bpb.reserverd_sectors + (bpb.sectors_per_fat * 2));
-    uint8_t status = inb(0x1F7);
+    } 
+
+    // Jump to kernel code loaded from disk
+    void (*kernel_entry)(void) = (void (*)(void))0x100000;
+    kernel_entry();
+
     while (1) {
         asm volatile ("hlt");
+    }
+}
+
+uint32_t read_nextcluster(uint32_t *fattable, uint32_t cluster)
+{
+    uint32_t next = fattable[cluster];
+    if (next == 0xfffffff) {
+        return 0;
+    }
+    else {
+        clusters++;
+        return next;
     }
 }
 
@@ -238,7 +292,6 @@ void log(char *msg) {
     }
 }
 
-
 void read_data(uint8_t *data, uint32_t lba)
 {
 
@@ -267,4 +320,17 @@ void read_data(uint8_t *data, uint32_t lba)
 
     outb(FEATURES, 0x0);
 
+}
+
+void* memmove(void* dstptr, const void* srcptr, size_t size) {
+	unsigned char* dst = (unsigned char*) dstptr;
+	const unsigned char* src = (const unsigned char*) srcptr;
+	if (dst < src) {
+		for (size_t i = 0; i < size; i++)
+			dst[i] = src[i];
+	} else {
+		for (size_t i = size; i != 0; i--)
+			dst[i-1] = src[i-1];
+	}
+	return dstptr;
 }
