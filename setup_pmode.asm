@@ -19,6 +19,7 @@ enable_pmode:
     mov ax, 0x10
     mov ds, ax
 
+    xchg bx, bx
     ; long jump
     ; this sets cs to 0x08 (GDT code entry) and jumps to C code using that
     jmp 0x08:callC
@@ -38,7 +39,7 @@ myGdt:
     dw 0x0000 ; base bottom
     db 0x0    ; more base
     db 0x9A   ; access byte
-    db 0xFC   ; rest of limit & flags
+    db 0xCF   ; rest of limit & flags
     db 0x0    ; rest  of base
 
     ; data segment
@@ -46,7 +47,7 @@ myGdt:
     dw 0x0000 ; base bottom
     db 0x0    ; more base
     db 0x92   ; access byte
-    db 0xFC   ; rest of limit & flags
+    db 0xCF   ; rest of limit & flags
     db 0x0    ; rest  of base
 gdt_end:
 

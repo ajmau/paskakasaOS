@@ -23,7 +23,7 @@ mov bx, 0x7e00
 int 0x13
 
 mov ah, 2
-mov al, 2
+mov al, 10
 mov ch, 0
 mov cl, 4
 mov dh, 0
@@ -31,7 +31,6 @@ mov dl, [driveNumber]
 mov bx, 0xd000
 int 0x13
 
-xchg bx, bx
 jmp 0x7e00 ; doesn't work because of org 0x7c00 [would be 0x7c00 + 0x7c00]
 ;jmp $
 ;jmp enable_pmode

@@ -10,7 +10,7 @@ stage1: bootsector
 	clang -m32 -g -ffreestanding -nostdlib -target x86_64-unknown-none -c -o setup_longmode.o setup_longmode.c
 	ld -m elf_i386 -T linker.ld -o stage1.elf setup_pmode.o setup_longmode.o switch64.o 
 	objcopy -O binary stage1.elf stage1.bin
-	dd if=final.bin of=$(DISKFILE) bs=512 seek=1 conv=notrunc
+	dd if=stage1.bin of=$(DISKFILE) bs=512 seek=1 conv=notrunc
 
 stage2: stage1
 	clang -m64 -g -ffreestanding -nostdlib -target x86_64-unknown-none -c -o stage2.o stage2.c

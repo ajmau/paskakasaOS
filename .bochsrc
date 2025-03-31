@@ -1,8 +1,7 @@
-ata0-master: type=disk, path="c.img"
+ata0-master: type=disk, path="disk.img"
 boot: disk
 
 display_library: x, options="gui_debug"
 
-# Enable logging for the debugger (optional)
-#log: output=bochsdbg.txt
+magic_break: enabled=1
 

@@ -50,6 +50,8 @@ enable_pae:
     ret
 
 switch_to_64:
+
+    xchg bx, bx
     push ebp
     mov ebp, esp
 
@@ -63,6 +65,7 @@ switch_to_64:
     mov cr3, eax
 
     mov eax, cr0
+    xchg bx, bx
     or eax, 1 << 31
     mov cr0, eax
 

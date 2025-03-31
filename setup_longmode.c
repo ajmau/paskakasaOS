@@ -101,6 +101,7 @@ void _setup_lmode()
     setupGDT(&GDTdesc);
 
     enable_pae();
+    /*
     int i = 0;
     while (i < length) {
         *vidmem = msg[i];
@@ -110,6 +111,7 @@ void _setup_lmode()
         i++;
     }
 
+    */
     switch_to_64((uint64_t)&pml4, (uint64_t)&GDTdesc);
 
     log("Log message 1\n");
