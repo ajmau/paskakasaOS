@@ -86,4 +86,6 @@ jee:
     mov gs, ax                    ; Set the G-segment to the A-register.
     mov ss, ax
 
+    mov rdi, [esp + 16]
+
     call 0xd000

@@ -83,17 +83,15 @@ struct lfn {
 struct sfn sfn;
 struct lfn lfn;
 
+void lfn_fixname(struct lfn *entry);
+
 int clusters = 0;
 
 void parse_bpb(uint8_t *bytes, struct BPB *bpb);
 __attribute__((noreturn))
-void loader_main() {
+void loader_main(uint32_t memorymap) {
 
     clusters = 0;
-
-    char *vidmem = (char*)0xb8000;
-    *vidmem = 'B';
-    log("mitäs nyt sitten");
 
     uint8_t data[512];
     uint32_t fat[128];
@@ -106,6 +104,11 @@ void loader_main() {
     read_data(&data, PARTITION_START);
 
     parse_bpb(&data, &bpb);
+
+    log("FAT32 BPB OEM: ");
+    log(bpb.OEM_identifier);
+    log("\n");
+
     for (i = 0; i < 512; i++) {
         data[i] = 0;
     }
@@ -125,7 +128,7 @@ void loader_main() {
         //uint32_t entry = data[i] | data[i+1] << 8 | data[2] << 16 | data[3] << 24;
 
         if (data[i] == 0) {
-            log("No more files\n");
+            log("No more files in directory area\n");
             break;
         }
 
@@ -136,8 +139,16 @@ void loader_main() {
 
         if (data[i+11] == 0x0f) {
             memmove(&lfn, &data[i], 32);
+            log("Long file entry found: ");
+            log(lfn.start);
+            log(lfn.mid);
+            log(lfn.end);
+            log("\n");
         } else {
             memmove(&sfn, &data[i], 32);
+            log("Short file entry found: ");
+            log(sfn.name);
+            log("\n");
         }
         int limit = 32;
 
@@ -177,8 +188,8 @@ void loader_main() {
     } 
     __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
     // Jump to kernel code loaded from disk
-    void (*kernel_entry)(void) = (void (*)(void))0x100000;
-    kernel_entry();
+    void (*kernel_entry)(uint32_t) = (void (*)(uint32_t))0x100000;
+    kernel_entry(memorymap);
 
     while (1) {
         asm volatile ("hlt");

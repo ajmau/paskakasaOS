@@ -7,7 +7,7 @@ bootsector:
 stage1: bootsector
 	nasm switch64.asm -f elf32 -o switch64.o
 	nasm setup_pmode.asm -f elf32 -o setup_pmode.o
-	clang -m32 -g -ffreestanding -nostdlib -target x86_64-unknown-none -c -o setup_longmode.o setup_longmode.c
+	clang -m32 -g -O0 -ffreestanding -nostdlib -target x86_64-unknown-none -c -o setup_longmode.o setup_longmode.c
 	ld -m elf_i386 -T linker.ld -o stage1.elf setup_pmode.o setup_longmode.o switch64.o 
 	objcopy -O binary stage1.elf stage1.bin
 	dd if=stage1.bin of=$(DISKFILE) bs=512 seek=1 conv=notrunc

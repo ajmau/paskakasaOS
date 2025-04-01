@@ -1,7 +1,30 @@
 extern _setup_lmode
+
+
 bits 16
 enable_pmode:
+
     cli 
+
+
+; read e820 memory map into [entries]
+    lea edi, [entries]
+    xor ebx, ebx
+loop:
+    mov edx, 0x534D4150
+    mov eax, 0xe820
+    mov ecx, 24 ; count
+    int 0x15
+
+    test ebx, ebx ; are all entries read?
+    jz continue
+
+    ; increase pointer and read next memory map entry
+    add edi, 24 
+    jmp loop
+
+
+continue:
     ; enable A20 line
     in al, 0x92
     or al, 2
@@ -57,5 +80,30 @@ gdtPtr:
 
 bits 32 ; god damn forgot to specify this
 callC:
+    lea edi, [entries]
+    push edi
     call _setup_lmode
     jmp $
+
+section .data
+align 16
+entries:
+    dq 0, 0   ; First entry: 2 x uint64_t
+    dd 0      ; First uint32_t
+    dd 0      ; Second uint32_t (ACPI 3.0)
+
+    dq 0, 0   ; Second entry
+    dd 0
+    dd 0
+
+    dq 0, 0
+    dd 0
+    dd 0
+
+    dq 0, 0
+    dd 0
+    dd 0
+
+    dq 0, 0
+    dd 0
+    dd 0
