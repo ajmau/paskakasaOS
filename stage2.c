@@ -140,11 +140,10 @@ void loader_main() {
             memmove(&sfn, &data[i], 32);
         }
         int limit = 32;
-        
 
         entries++;
 
-        if (data[i+11] = 0x10) {
+        if (data[i+11] == 0x10) {
             log("Found directory\n");
         }
 
@@ -160,43 +159,23 @@ void loader_main() {
     read_data((uint8_t*)0x100000, clusterdataLBA);
 
     uint32_t next  =  cluster;
+    int  memIndex = 1;
     // calculate first cluster
     while (1) {
-    next = read_nextcluster(&fat, next);
-    if (next == 0) {
-        break;
-    }
-    uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (next - 2) * bpb.sectors_per_cluster;
-
-
-    read_data(&filedata, clusterdataLBA);
-    log(filedata);
-/*
-    int length = 13;
-    i = 0;
-    while (i < length) {
-        *vidmem++ = filename[i];
-        *vidmem++ = 0x0e;
-        i++;
-    }*/
-
-//    *vidmem++ = ':';
-//    *vidmem++ = 0x0e;
-//    vidmem+=140;
-//    *vidmem = 'X';
-    i=0;
-    while (filedata[i] != 0x0) {
-        if (filedata[i] != '\n') {
-        *vidmem++ = filedata[i];
-        *vidmem++ = 0xd;
-        i++;
-        } else {
-            i++;
+        next = read_nextcluster(&fat, next);
+        if (next == 0) {
+            break;
         }
-    }
+        uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (next - 2) * bpb.sectors_per_cluster;
 
+
+        uint64_t address = 0x100000 + (memIndex*0x200);
+        read_data((uint8_t*)address, clusterdataLBA);
+        log(filedata);
+
+    memIndex++;
     } 
-
+    __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
     // Jump to kernel code loaded from disk
     void (*kernel_entry)(void) = (void (*)(void))0x100000;
     kernel_entry();
@@ -313,6 +292,9 @@ void read_data(uint8_t *data, uint32_t lba)
     int i;
     uint16_t val;
     for (int i = 0; i<512; i+=2) {
+        if (i == 510) {
+            asm volatile ("nop");
+        }
         val = inw(DATA);
         data[i] = val & 0xFF;
         data[i+1] = (val & 0xFF00) >> 8;

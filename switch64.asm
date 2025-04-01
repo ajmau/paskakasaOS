@@ -29,11 +29,11 @@ GDT:
         dd 0xFFFF                                   ; Limit & Base (low, bits 0-15)
         db 0                                        ; Base (mid, bits 16-23)
         db PRESENT | NOT_SYS | RW                   ; Access
-        db GRAN_4K | SZ_32 | 0xF                    ; Flags & Limit (high, bits 16-19)
+        db GRAN_4K | LONG_MODE | 0xF                    ; Flags & Limit (high, bits 16-19)
         db 0                                        ; Base (high, bits 24-31)
-    .TSS: equ $ - GDT
-        dd 0x00000068
-        dd 0x00CF8900
+;    .TSS: equ $ - GDT
+;        dd 0x00000068
+;        dd 0x00CF8900
     .Pointer:
         dw $ - GDT - 1
         dq GDT
@@ -50,8 +50,6 @@ enable_pae:
     ret
 
 switch_to_64:
-
-    xchg bx, bx
     push ebp
     mov ebp, esp
 
@@ -65,13 +63,9 @@ switch_to_64:
     mov cr3, eax
 
     mov eax, cr0
-    xchg bx, bx
+ 
     or eax, 1 << 31
     mov cr0, eax
-
-    ;; DO NOT DO BEFORE JUMPING TO 64BIT
-
-    xchg bx, bx
 
     lgdt[GDT.Pointer]
     jmp GDT.Code:jee
