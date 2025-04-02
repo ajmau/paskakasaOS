@@ -1,27 +1,28 @@
-DISKFILE=disk.img
+all: compile install
 
-bootsector:
-	nasm -f bin bootsector.asm -o bootsector.bin
-	dd if=bootsector.bin of=$(DISKFILE)  conv=notrunc bs=446 count=1
+install:
+	$(MAKE) -C bootloader install
+	$(MAKE) -C kernel install
 
-stage1: bootsector
-	nasm switch64.asm -f elf32 -o switch64.o
-	nasm setup_pmode.asm -f elf32 -o setup_pmode.o
-	clang -m32 -g -O0 -ffreestanding -nostdlib -target x86_64-unknown-none -c -o setup_longmode.o setup_longmode.c
-	ld -m elf_i386 -T linker.ld -o stage1.elf setup_pmode.o setup_longmode.o switch64.o 
-	objcopy -O binary stage1.elf stage1.bin
-	dd if=stage1.bin of=$(DISKFILE) bs=512 seek=1 conv=notrunc
+compile: bootloader kernel
 
-stage2: stage1
-	clang -m64 -g -ffreestanding -nostdlib -target x86_64-unknown-none -c -o stage2.o stage2.c
-	ld -m elf_x86_64 -T  stage2.ld -o stage2.elf stage2.o
-	objcopy -O binary stage2.elf stage2.bin
-	dd if=stage2.bin of=$(DISKFILE) bs=512 seek=3 conv=notrunc # write
+bootloader:
+	$(MAKE) -C bootloader bootloader
 
-bootloader: stage2
-
-run:
-	qemu-system-x86_64 $(DISKFILE) -serial file:serial.log
+kernel:
+	$(MAKE) -C kernel kernel
 
 debug:
-	gdb -ex "target remote localhost:1234" -ex "symbol-file stage2.elf"
+	qemu-system-x86_64 -hda disk.img -serial file:serial.log -d int  -no-reboot -s -S
+
+run:
+	qemu-system-x86_64 -hda disk.img -serial file:serial.log -d int  -no-reboot
+
+stage1:
+	gdb -ex "target remote localhost:1234" -ex "symbol-file bootloader/bin/stage1.elf"
+
+stage2:
+	gdb -ex "target remote localhost:1234" -ex "symbol-file bootloader/bin/stage2.elf"
+
+stage3:
+	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel/boot.elf"
