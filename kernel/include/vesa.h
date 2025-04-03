@@ -41,8 +41,23 @@ typedef struct vbe_mode_info_structure {
 	uint8_t reserved1[206];
 } __attribute__ ((packed)) vbe_mode_info_structure_t;
 
-void init_vesa(uint32_t);
+
+typedef struct PSFv2 {
+    uint32_t magic;
+    uint32_t version;
+    uint32_t headersize;
+    uint32_t flags;
+    uint32_t numglyphs;
+    uint32_t bytesperglyph;
+    uint32_t height;
+    uint32_t width;
+} __attribute__((packed)) PSFv2_t;
+
+
+void init_vesa(uint32_t, uint64_t*);
 void put_pixel(uint32_t x, uint32_t y);
 void render_glyph(uint8_t *glyph, int x, int y);
+void print_char(char, int x, int y);
+void print_string(char*, int);
 
 #endif

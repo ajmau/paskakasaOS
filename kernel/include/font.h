@@ -2,6 +2,6 @@
 #define FONT_H
 #include <stdint.h>
 
-uint8_t* install_font(uint64_t *);
+uint16_t* install_font(uint64_t *);
 
 #endif

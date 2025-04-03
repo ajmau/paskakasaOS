@@ -1,5 +1,6 @@
 #include <mem.h>
 #include <font.h>
+#include <vesa.h>
 
 typedef struct PSFv2 {
     uint32_t magic;
@@ -16,7 +17,7 @@ PSFv2_t header;
 
 uint8_t glyphs[256][16] = {0};
 
-uint8_t *install_font(uint64_t* fonts)
+uint16_t *install_font(uint64_t* fonts)
 {
     memmove(&header, fonts, sizeof(PSFv2_t));
 
@@ -26,7 +27,6 @@ uint8_t *install_font(uint64_t* fonts)
     for (i = 0; i < 256; i++) {
         memmove(glyphs[i],  ptr+i*16, 16);
     }
-
 
     return &glyphs;
 }

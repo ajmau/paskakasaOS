@@ -6,9 +6,7 @@ SRCS = start.c \
        interrupts/interrupts.c \
        utils/mem.c \
        utils/vesa.c \
-       utils/vga.c  \
        utils/mem.c  \
-       utils/font.c  \
        utils/portio.c  \
        storage/fat32.c \
        storage/ata_pio.c 

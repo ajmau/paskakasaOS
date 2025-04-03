@@ -31,14 +31,27 @@ void start(uint32_t memorymap)
     *vidmem = 'X';
     int i;
 
-    init_vesa(memorymap);
     init_fat();
     read_file("FONT    PSF", (void*)0x2000000);
-    uint8_t* glyphs = install_font((uint64_t*)0x2000000);
 
-    for (i = 0; i < 256; i++) {
-        render_glyph(&glyphs[i], 20*i, 20*i);
+    init_vesa(memorymap, (uint64_t*)0x2000000);
+    int test = 0;
+    print_string("nigga\n", 6);
+    for (i=0; i < 80; i++,test++) {
+        if (test == 10) {
+            print_string("nigga\n", 6);
+            test = 0;
+        } else {
+        print_string("Fontti testi\n", 13);
+        }
     }
+    print_string("ABC", 3);
+    print_string("DEF", 3);
+    print_string("GHI", 3);
+    print_string("JKL", 3);
+    print_string("MNO", 3);
+    print_string("PQR", 3);
+    print_string("STU", 3);
    
     /*
     e820_entry_t *entries[5];
@@ -57,22 +70,14 @@ void start(uint32_t memorymap)
     }
         */
 
-    __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
 
-    //init_vga();
     //usableMem = usableMem / (1024*1024);
     //char *sizeBuffer[100];
     //itoa(usableMem, sizeBuffer, 10);
 
 
-    char number[3];
-    __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
-
     setup_interrupts();
     __asm__ volatile ("sti");
-
-    put_pixel(250, 250);
-
 
     while (1) {}
 }
