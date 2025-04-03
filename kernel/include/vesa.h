@@ -59,5 +59,6 @@ void put_pixel(uint32_t x, uint32_t y);
 void render_glyph(uint8_t *glyph, int x, int y);
 void print_char(char, int x, int y);
 void print_string(char*, int);
+void draw_rectangle(int x, int y, int width, int height);
 
 #endif

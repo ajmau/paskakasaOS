@@ -36,15 +36,16 @@ void start(uint32_t memorymap)
 
     init_vesa(memorymap, (uint64_t*)0x2000000);
     int test = 0;
-    print_string("nigga\n", 6);
+    print_string("öngh\n", 6);
     for (i=0; i < 80; i++,test++) {
-        if (test == 10) {
-            print_string("nigga\n", 6);
+        if (test == 3) {
+            print_string("öngh\n", 6);
             test = 0;
         } else {
         print_string("Fontti testi\n", 13);
         }
     }
+    
     print_string("ABC", 3);
     print_string("DEF", 3);
     print_string("GHI", 3);
@@ -52,7 +53,16 @@ void start(uint32_t memorymap)
     print_string("MNO", 3);
     print_string("PQR", 3);
     print_string("STU", 3);
-   
+
+    print_string("uusi rivi\n", 10);
+    print_string("toka rivi\n", 10);
+
+    for (i=0; i < 100; i++) {
+    print_string("ABC", 3);
+    }
+
+    draw_rectangle(150, 100, 100, 100);
+  
     /*
     e820_entry_t *entries[5];
     e820_entry_t *memmap = (e820_entry_t*)memorymap;

@@ -3,7 +3,7 @@
 
 #define CLEAR_PIXEL(x, y) (*(uint32_t*)((y) * vesa_info.pitch + ((x) * (vesa_info.bpp / 8)) + vesa_info.framebuffer) = 0x0)
 #define SET_PIXEL(x, y) (*(uint32_t*)((y) * vesa_info.pitch + ((x) * (vesa_info.bpp / 8)) + vesa_info.framebuffer) = terminal.color)
-
+#define SET_PIXEL_COLOR(x, y,c) (*(uint32_t*)((y) * vesa_info.pitch + ((x) * (vesa_info.bpp / 8)) + vesa_info.framebuffer) = c)
 
 typedef struct text_terminal {
     uint32_t x;
@@ -32,7 +32,6 @@ uint16_t *install_font(uint64_t* fonts)
 {
     memmove(&header, fonts, sizeof(PSFv2_t));
 
-
     uint8_t* ptr = (uint8_t*)fonts + sizeof(PSFv2_t);
     int i; 
     for (i = 0; i < 256; i++) {
@@ -48,26 +47,14 @@ void init_vesa(uint32_t p, uint64_t* font)
     install_font(font);
     terminal.x = 0;
     terminal.y = 0;
-    terminal.color = 0xFF;
+    terminal.color = 0x000f00;
 
-}
-
-uint8_t get_byte(uint32_t x, uint32_t y)
-{
-    uint32_t* pixel_offset = (uint32_t*)(y * vesa_info.pitch + (x * (vesa_info.bpp/8)) + vesa_info.framebuffer);
-    return *pixel_offset;
 }
 
 void put_pixel(uint32_t x, uint32_t y)
 {
     uint32_t* pixel_offset = (uint32_t*)(y * vesa_info.pitch + (x * (vesa_info.bpp/8)) + vesa_info.framebuffer);
     *pixel_offset = terminal.color;
-}
-
-void clear_pixel(uint32_t x, uint32_t y)
-{
-    uint32_t* pixel_offset = (uint32_t*)(y * vesa_info.pitch + (x * (vesa_info.bpp/8)) + vesa_info.framebuffer);
-    *pixel_offset = 0x0;
 }
 
 void render_glyph(uint8_t *glyph, int x, int y) {
@@ -93,81 +80,97 @@ void clear_glyph(int x, int y) {
 
 void print_char(char c, int x, int y)
 {
-    render_glyph(glyphs[c], terminal.x*header.width, terminal.y*header.height);
-}
-
-void scroll_glyph(int x, int y) {
-    for (int row = x; row < 16; row++) {
-        uint8_t row_data = get_byte(x, y);
-        for (int col = y; col < 8; col++) {
-            if (row_data & (1 << (7 - col))) {
-                SET_PIXEL(x + col, y + row);  // Draw pixel if the bit is set
-            }
-        }
-    }
-}
-
-void scroll_row(int row)
-{
-    int x;
-    for (x=0; x < (vesa_info.width/8); x++) {
-        scroll_glyph(x, row);
+    switch (c) {
+        case -61:
+            render_glyph(glyphs[246], x*header.width, y*header.height);
+            break;
+        default:
+            render_glyph(glyphs[c], x*header.width, y*header.height);
     }
 }
 
 void scroll()
 {
-    terminal.x = 0;
-    terminal.y = 0;
+    int tx = 0;
+    int ty = 0;
     int x=0;
     int y=0;
     // clear screen
-    for (y=0; y < (vesa_info.height); y++) {
-        for (x=0; x < (vesa_info.width); x++) {
-            CLEAR_PIXEL(x, y);
+    for (y=0; y < 49; y++) {
+        for (x=0; x < (vesa_info.width/8); x++) {
+            clear_glyph(x*header.width, y*header.height); // clear one row
         }
-    }
+
     int a = 1;
     int b = 0;
 
-    // scroll lines buffer
-    for (a=1; a < 96; a++) {
-        memmove(lines[a-1].characters, lines[a].characters, 128);
-        lines[a-1].length = lines[a].length;
-    }
+    memset(lines[y].characters, 0, 128);
+    memmove(lines[y].characters, lines[y+1].characters, 128);
+    lines[y].length = lines[y+1].length;
 
-    for (a=1; a < (vesa_info.height/16); a++) {
-        for (b = 0; b<lines[a].length; b++) {
-            if (lines[a].characters[b] != 0xa) {
-             print_char(lines[a].characters[b], terminal.x, terminal.y);
-            }
-            terminal.x++;
+    for (b = 0; b<lines[y].length; b++) {
+        if (lines[y].characters[b] != 0xa) {
+            print_char(lines[y].characters[b], tx, ty);
         }
-        terminal.y++;
-        terminal.x=0;
+        tx++;
     }
+    ty++;
+    tx=0;
+}
 
+}
+
+void clear_row(int line) {
+    int i;
+    for (i=0; i < (vesa_info.width/8); i++) {
+        clear_glyph(i*header.width, line*header.height);
+    }
 }
 
 void print_string(char *string, int len) {
     int i = 0;
-    for (i; i < len; i++) {
-        if (terminal.x+1 == (vesa_info.width/8)) {
-            terminal.x = 0;
-            terminal.y++;
-        }
+    int height = (vesa_info.height/16);
 
-        if (terminal.y == (vesa_info.height/16)) {
-            scroll();
-        }
+    for (i=0; i < len; i++) {
 
-        if (string[i] == 0xa) { // 0xa = /n
+        // check if character is '\n'
+        if (string[i] == 0xa) {
+
+            // move cursor and move to next row buffer
+            if (terminal.y+1 == height) {
+                scroll();
+            } else {
+                terminal.y++;
+            }
             terminal.x=0;
-            terminal.y++;
-            continue;
         }
-        print_char(string[i], terminal.x++, terminal.y);
+
+        // check if max width reached
+        if (terminal.x == (vesa_info.width/8))  {
+            // move to next row buffer
+            if (terminal.y+1 == height) {
+                scroll();
+            } else {
+                terminal.y++;
+            }
+            terminal.x=0;
+        }
+
+        print_char(string[i], terminal.x, terminal.y);
+        lines[terminal.y].characters[terminal.x] = string[i];
+        lines[terminal.y].length++; 
+
+        // move cursor
+        terminal.x++;
+
     }
-    memmove(lines[terminal.y].characters, string, len);
-    lines[terminal.y].length = len;
+}
+
+void draw_rectangle(int x, int y, int width, int height) {
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            //uint32_t *pixel_offset = (uint32_t*)((y + i) * vesa_info.width + (x + j))
+            SET_PIXEL_COLOR(x+j, y+i, 0x00ff00);
+        }
+    }
 }
