@@ -3,8 +3,16 @@ bits 16      ; tell the assembler we want 16 bit code
 
 extern _setup_lmode
 
+; segment registers need to be initialized to work on real HW
+mov ax, 0x0
+mov ds, ax
+mov es, ax
+mov fs, ax
+mov gs, ax
+mov ss, ax
+
 ; setup stack
-;mov sp, 0x5000
+mov sp, 0x5000
 
 ; save drive number wich is in dl after boot
 mov [driveNumber], dl
@@ -18,7 +26,7 @@ mov ch, 0 ; cylinder (first = 0)
 mov cl, 2 ; sector (first = 1)
 mov dh, 0 ; head number
 mov dl, [driveNumber]
-;mov es, 0
+;;;;;;;;;mov es, 0
 mov bx, 0x7e00
 int 0x13
 

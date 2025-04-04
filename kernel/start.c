@@ -7,11 +7,13 @@
 
 void log(char *msg);
 char * itoa( int value, char * str, int base );
-
+void new_page_table(uint32_t addr);
 void flush_tlb_all(uint64_t);
 void identity_map_1gb();
 __attribute__((aligned(4096))) uint64_t pml4[512];
 __attribute__((aligned(4096))) uint64_t pud[512];
+__attribute__((aligned(4096))) uint64_t pmd[512];
+__attribute__((aligned(4096))) uint64_t pmd2[512];
 
 
 typedef struct {
@@ -26,17 +28,25 @@ void start(uint32_t memorymap)
 {
     char *vidmem = (char*)0xb8000;
 
-    identity_map_1gb();
-    flush_tlb_all((uint64_t)&pml4);
     *vidmem = 'X';
     int i;
 
+    // read font file from disk
     init_fat();
     read_file("FONT    PSF", (void*)0x2000000);
 
     init_vesa(memorymap, (uint64_t*)0x2000000);
-    int test = 0;
+
+    // identity map framebuffer
+    uint32_t fb = get_framebuffer();
+    new_page_table(fb);
+    flush_tlb_all((uint64_t)&pml4);
+
     print_string("öngh\n", 6);
+
+    put_pixel(100, 100);
+
+    int test = 0;
     for (i=0; i < 80; i++,test++) {
         if (test == 3) {
             print_string("öngh\n", 6);
@@ -100,21 +110,28 @@ void flush_tlb_all(uint64_t new_cr3) {
         : "memory"
     );
 }
-void identity_map_1gb()
-{
+
+// identity maps lowest few megabytes and 1mb at addr
+void new_page_table(uint32_t addr) {
     for (int i = 0; i < 512; i++) {
         pml4[i] = 0;
         pud[i] = 0;
+        pmd[i] = 0;
+        pmd2[i] = 0;
     }
+
+    uint32_t offset1 = ((addr >> 39) & 0x1ff);
+    uint32_t offset2 = ((addr >> 30) & 0x1ff);
+    uint32_t offset3 = ((addr >> 21) & 0x1ff);
 
     pml4[0] = ((uint64_t)pud & 0xFFFFFFFFFF000) | 3;
-    for (int i = 0; i < 512; i++) { 
-        pud[i] = ((uint64_t)i*0x40000000) |0b10000011;// 3;
+    pud[0] = ((uint64_t)pmd & 0xFFFFFFFFFF000) | 3;
+    pud[offset2] = ((uint64_t)pmd2 & 0xFFFFFFFFFF000) | 3;
+    pmd2[offset3] = ((uint64_t) addr) | 0b10000011;
+    for (int i = 0; i < 20; i++) { 
+        pmd[i]  = (i * 0x200000) | 0b10000011;
     }
 }
-
-
-
 
 static inline void outb(uint16_t port, uint8_t val)
 {
@@ -129,8 +146,6 @@ void log(char *msg) {
         msg++;
     }
 }
-
-
 
 char * itoa( int value, char * str, int base )
 {

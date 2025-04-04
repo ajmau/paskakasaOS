@@ -51,10 +51,9 @@ void init_vesa(uint32_t p, uint64_t* font)
 
 }
 
-void put_pixel(uint32_t x, uint32_t y)
+uint32_t get_framebuffer()
 {
-    uint32_t* pixel_offset = (uint32_t*)(y * vesa_info.pitch + (x * (vesa_info.bpp/8)) + vesa_info.framebuffer);
-    *pixel_offset = terminal.color;
+    return vesa_info.framebuffer;
 }
 
 void render_glyph(uint8_t *glyph, int x, int y) {
@@ -164,6 +163,10 @@ void print_string(char *string, int len) {
         terminal.x++;
 
     }
+}
+
+void put_pixel(uint32_t x, uint32_t y) {
+    SET_PIXEL(x, y);
 }
 
 void draw_rectangle(int x, int y, int width, int height) {

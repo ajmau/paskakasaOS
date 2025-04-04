@@ -127,9 +127,9 @@ void loader_main(uint32_t memorymap) {
 
     process_directory_area();
 
-    log("FAT32 BPB OEM: ");
-    log(bpb.OEM_identifier);
-    log("\n");
+    //log("FAT32 BPB OEM: ");
+    //log(bpb.OEM_identifier);
+    //log("\n");
 
     for (i = 0; i < 512; i++) {
         data[i] = 0;
@@ -173,7 +173,7 @@ void loader_main(uint32_t memorymap) {
 
         uint64_t address = 0x100000 + (memIndex*0x200);
         read_data((uint8_t*)address, clusterdataLBA);
-        log(filedata);
+        //log(filedata);
 
     memIndex++;
     } 
@@ -186,16 +186,6 @@ void loader_main(uint32_t memorymap) {
         asm volatile ("hlt");
     }
 }
-
-
-/*
-void read_filename_from_lfn(file_t *file, struct lfn *lfn)
-{
-    memmove(file->name, lfn->start, 10);
-    memmove((file->name+10), lfn->mid, 12);
-    memmove((file->name+22), lfn->end, 4);
-}
-    */
 
 uint8_t process_directory_area()
 {

@@ -31,9 +31,6 @@ GDT:
         db PRESENT | NOT_SYS | RW                   ; Access
         db GRAN_4K | LONG_MODE | 0xF                    ; Flags & Limit (high, bits 16-19)
         db 0                                        ; Base (high, bits 24-31)
-;    .TSS: equ $ - GDT
-;        dd 0x00000068
-;        dd 0x00CF8900
     .Pointer:
         dw $ - GDT - 1
         dq GDT
@@ -53,6 +50,7 @@ switch_to_64:
     push ebp
     mov ebp, esp
 
+    xchg bx, bx
     cli
     mov ecx, 0xC0000080
     rdmsr
@@ -67,24 +65,21 @@ switch_to_64:
     or eax, 1 << 31
     mov cr0, eax
 
+    xchg bx, bx
     lgdt[GDT.Pointer]
-    jmp GDT.Code:jee
-    ;mov ebx, [esp + 16]
-    ;lgdt[ebx]
-    ;jmp 0x08:jee
-    pop ebp
-    ret
-
-
-;extern loader_main
-[bits 64]
-jee:
     mov ax, 0x10
     mov ds, ax                    ; Set the data segment to the A-register.
     mov es, ax                    ; Set the extra segment to the A-register.
     mov fs, ax                    ; Set the F-segment to the A-register.
     mov gs, ax                    ; Set the G-segment to the A-register.
     mov ss, ax
+
+    jmp GDT.Code:jee
+    pop ebp
+    ret
+
+[bits 64]
+jee:
 
     mov rdi, [esp + 16]
 

@@ -6,7 +6,6 @@ enable_pmode:
 
     cli 
 
-
 ; read e820 memory map into [entries]
     lea edi, [entries]
     xor ebx, ebx
@@ -28,9 +27,6 @@ error:
 
 
 continue:
-
-
-
     ;xchg bx, bx
 
     mov ax, 0x4F02	; set VBE mode
@@ -41,7 +37,7 @@ continue:
 
     xchg bx, bx
     mov ax, 0x4F01
-    mov cx,  0x117;0x0117
+    mov cx,  0x117
     mov di, vbe_info_structure
     int 0x10
     cmp ax, 0x004F	; test for error
