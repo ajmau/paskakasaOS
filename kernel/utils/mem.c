@@ -1,6 +1,14 @@
 #include <stdint.h>
 #include <stddef.h>
 
+uint32_t strlen(char *str) {
+	int n=0;
+	while (*str++ != '\0') {
+		n++;
+	}
+	return n;
+}
+
 uint8_t strcmp(char *str1, char *str2, size_t len)
 {
     size_t n = 0;

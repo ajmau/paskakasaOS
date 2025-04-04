@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 extern void enable_pae();
-extern void switch_to_64(uint64_t, uint32_t);
+extern void switch_to_64(uint64_t, uint32_t, uint32_t);
 void identity_map_1gb();
 extern void* _end;
 
@@ -22,11 +22,11 @@ __attribute__((aligned(4096))) uint64_t pud[512];
 __attribute__((aligned(4096))) uint64_t pmd[512];
 __attribute__((aligned(4096))) uint64_t pmd2[512];
 
-void _setup_lmode(uint32_t memorymap)
+void _setup_lmode(uint32_t vesa, uint32_t memorymap)
 {
     identity_map_1gb();
     enable_pae();
-    switch_to_64((uint64_t)&pml4, memorymap);
+    switch_to_64((uint64_t)&pml4, vesa, memorymap);
 }
 
 static inline void outb(uint16_t port, uint8_t val)

@@ -14,7 +14,6 @@ loop:
     mov eax, 0xe820
     mov ecx, 24 ; count
     int 0x15
-
     test ebx, ebx ; are all entries read?
     jz continue
 
@@ -27,7 +26,7 @@ error:
 
 
 continue:
-    ;xchg bx, bx
+    xchg bx, bx
 
     mov ax, 0x4F02	; set VBE mode
     mov bx, 0x4117	; VBE mode number; notice that bits 0-13 contain the mode number and bit 14 (LFB) is set and bit 15 (DM) is clear.
@@ -99,18 +98,20 @@ gdtPtr:
 
 bits 32 ; god damn forgot to specify this
 callC:
-    lea edi, [vbe_info_structure]
+    lea edi, [system_info]
+    push edi
+    lea edi, [entries]
     push edi
     call _setup_lmode
     jmp $
 
 section .data
 
+system_info:
 vbe_info_structure:
 ;;	.signature		db "VBE2"	; indicate support for VBE 2.0+
-	.table_data:		resb 512
+	.table_data:	times 512 db 0
 
-align 16
 entries:
     dq 0, 0   ; First entry: 2 x uint64_t
     dd 0      ; First uint32_t

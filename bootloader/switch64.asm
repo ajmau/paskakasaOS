@@ -82,5 +82,6 @@ switch_to_64:
 jee:
 
     mov rdi, [esp + 16]
+    mov rsi, [esp + 20]
 
     call 0xd000

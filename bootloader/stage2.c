@@ -110,7 +110,7 @@ int clusters = 0;
 void parse_bpb(uint8_t *bytes, struct BPB *bpb);
 
 __attribute__((noreturn))
-void loader_main(uint32_t memorymap) {
+void loader_main(uint32_t vesa, uint32_t memorymap) {
 
     clusters = 0;
 
@@ -179,8 +179,8 @@ void loader_main(uint32_t memorymap) {
     } 
     __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
     // Jump to kernel code loaded from disk
-    void (*kernel_entry)(uint32_t) = (void (*)(uint32_t))0x100000;
-    kernel_entry(memorymap);
+    void (*kernel_entry)(uint32_t, uint32_t) = (void (*)(uint32_t, uint32_t))0x100000;
+    kernel_entry(vesa, memorymap);
 
     while (1) {
         asm volatile ("hlt");

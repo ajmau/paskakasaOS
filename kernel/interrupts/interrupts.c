@@ -1,4 +1,5 @@
 #include <interrupts.h>
+#include <text_terminal.h>
 #include <stddef.h>
 
 struct interrupt_descriptor idt[256];
@@ -8,27 +9,22 @@ void interrupt_general_handler(cpu_status_t* context)
 {
     switch (context->vector_number)
     {
-        case 13:
-            //log("general protection fault.");
+        case 0x13:
+            print_string("GENERAL PROTECTION FAULT\n", 25);
+            asm ("hlt");
             break;
-        case 14:
-            //log("page fault.");
+        case 0x14:
+            print_string("PAGE FAULT\n", 11);
+            asm ("hlt");          
             break;
         case 0x123:
             //log("yykaakoo\n");
             break;
         default:
-            //log("unexpected interrupt.\n");
+            print_string("unexpected interrupt.\n", 22);
+            asm  ("hlt");
             break;
     }
-    char *vidmem = (char*)0xb8000;
-    *vidmem++ = 'G';
-    *vidmem++ = 0xA;
-    *vidmem++ = 'A';
-    *vidmem++ = 0xb;
-    *vidmem++ = 'Y';
-    *vidmem++ = 0xD;
-    asm("nop");
 }
 
 void set_idt_entry(uint8_t vector, void* handler, uint8_t dpl)

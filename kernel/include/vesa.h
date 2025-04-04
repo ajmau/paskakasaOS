@@ -3,6 +3,14 @@
 #define VESA_H
 #include <stdint.h>
 
+#define CLEAR_PIXEL(x, y) (*(uint32_t*)((y) * info.pitch + ((x) * (info.bpp / 8)) + info.framebuffer) = 0x0)
+#define SET_PIXEL(x, y) (*(uint32_t*)((y) * info.pitch + ((x) * (info.bpp / 8)) + info.framebuffer) = terminal.color)
+#define SET_PIXEL_COLOR(x, y,c) (*(uint32_t*)((y) * info.pitch + ((x) * (info.bpp / 8)) + info.framebuffer) = c)
+#define CLEAR_PIXELP(x, y) (*(uint32_t*)((y) * vesa_info->pitch + ((x) * (vesa_info->bpp / 8)) + vesa_info->framebuffer) = 0x0)
+#define SET_PIXELP(x, y) (*(uint32_t*)((y) * vesa_info->pitch + ((x) * (vesa_info->bpp / 8)) + vesa_info->framebuffer) = terminal.color)
+#define SET_PIXEL_COLORP(x, y,c) (*(uint32_t*)((y) * vesa_info->pitch + ((x) * (vesa_info->bpp / 8)) + vesa_info->framebuffer) = c)
+
+
 typedef struct vbe_mode_info_structure {
 	uint16_t attributes;		// deprecated, only bit 7 should be of interest to you, and it indicates the mode supports a linear frame buffer.
 	uint8_t window_a;			// deprecated
@@ -41,26 +49,9 @@ typedef struct vbe_mode_info_structure {
 	uint8_t reserved1[206];
 } __attribute__ ((packed)) vbe_mode_info_structure_t;
 
-
-typedef struct PSFv2 {
-    uint32_t magic;
-    uint32_t version;
-    uint32_t headersize;
-    uint32_t flags;
-    uint32_t numglyphs;
-    uint32_t bytesperglyph;
-    uint32_t height;
-    uint32_t width;
-} __attribute__((packed)) PSFv2_t;
-
-
-void init_vesa(uint32_t, uint64_t*);
+void init_vesa(uint32_t);
 uint32_t get_framebuffer();
-void put_pixel(uint32_t x, uint32_t y);
-void render_glyph(uint8_t *glyph, int x, int y);
-void print_char(char, int x, int y);
-void print_string(char*, int);
+vbe_mode_info_structure_t *get_vesainfo();
 void draw_rectangle(int x, int y, int width, int height);
-void put_pixel(uint32_t x, uint32_t y);
 
 #endif

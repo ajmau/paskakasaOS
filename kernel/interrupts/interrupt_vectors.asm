@@ -50,7 +50,6 @@ jmp interrupt_stub
 
 align 16
 vector_8_handler:
-push $0
 push $8
 jmp interrupt_stub
 
@@ -62,31 +61,26 @@ jmp interrupt_stub
 
 align 16
 vector_10_handler:
-push $0
 push $10
 jmp interrupt_stub
 
 align 16
 vector_11_handler:
-push $0
 push $11
 jmp interrupt_stub
 
 align 16
 vector_12_handler:
-push $0
 push $12
 jmp interrupt_stub
 
 align 16
 vector_13_handler:
-push $0
 push $13
 jmp interrupt_stub
 
 align 16
 vector_14_handler:
-push $0
 push $14
 jmp interrupt_stub
 
