@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <mem.h>
+#include <vga.h>
 
 #define PAGESIZE 4096
 
@@ -28,13 +29,17 @@ pmeminfo_t pmeminfo;
 extern uint64_t kernel_end;
 extern uint64_t kernel_start;
 
-
 void init_pmm(uint32_t e820map)
 {
     int foundMemoryArea = 0;
     uint64_t start = (uint64_t)&kernel_start;
     uint64_t end = (uint64_t)&kernel_end;
+    uint64_t klength = end-start;
+    // dont hard code this
+    uint64_t kphys_start = (uint64_t)0x100000;
 
+    char membuf[40];
+    memset(membuf,0,40);
     int i;
     for (i=0; i<50; i++) {
         e820_entry_t* entry  = &((e820_entry_t*)e820map)[i];
@@ -44,15 +49,15 @@ void init_pmm(uint32_t e820map)
         if (entry->region_type  == 0x1) {
             pmeminfo.total_memory+=entry->region_length;
 
-            if (entry->base >= start && entry->base <= end && foundMemoryArea == 0) {
-                pool.base = ((end+0x1000) + 0xFFF) & ~0xFFF; // move past kernel memory and page align
-                pool.length = entry->region_length - (end - entry->base); 
+            if (entry->base >= kphys_start && entry->base <= kphys_start+klength && foundMemoryArea == 0) {
+                pool.base = ((kphys_start+klength+0x1000) + 0xFFF) & ~0xFFF; // move past kernel memory and page align
+                pool.length = entry->region_length - klength;
                 foundMemoryArea++;
                 continue;
             }
 
             // discard low memory
-            if (foundMemoryArea == 0 && pool.base != 0x0) {
+            if (foundMemoryArea == 0 && entry->base != 0x0) {
                 pool.base = entry->base;
                 pool.length = entry->region_length;
                 foundMemoryArea++;
@@ -61,12 +66,17 @@ void init_pmm(uint32_t e820map)
     }
 
     pool.pages = pool.length / 0x1000;
-    for (i = 0; i  < 100; i++)
-    pool.bitmap[i] = 0;
+    for (i = 0; i  < 100; i++) {
+        pool.bitmap[i] = 0;
+    }
+    
+
 }
 
 uint64_t pmm_allocate()
 {
+    uint64_t start = (uint64_t)&kernel_start;
+
     int i;
     for (i=0; i < pool.pages; i++) {
         if (pool.bitmap[i] == 0x0) {
@@ -77,6 +87,12 @@ uint64_t pmm_allocate()
     }
 
     return 0;
+}
+
+uint64_t pmm_kallocate()
+{
+    uint64_t start = (uint64_t)&kernel_start;
+    return start+pmm_allocate();
 }
 
 uint64_t get_usable_memory()

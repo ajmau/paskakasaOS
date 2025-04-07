@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x100000;           
+    . = 0xFFFFFFFF80000000;           
 
     kernel_start = .;
     .text : {

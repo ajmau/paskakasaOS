@@ -13,12 +13,8 @@ bpb_t bpb;
 // buffer for reading disk
 uint8_t buffer[BUFFER_SIZE] = {0};
 
-//lfn_t lfnlist[5] = {0};
-//sfn_t sfnlist[5] = {0};
-
 lfn_t lfn;
 sfn_t sfn;
-
 
 typedef struct file {
     char name[56];
@@ -97,7 +93,6 @@ void init_fat()
     // read bios parameter block from start of partition
     read_sector(buffer, PARTITION_START);
     memmove((uint8_t*)&bpb, &buffer, sizeof(bpb_t));
-    //parse_bpb(&buffer, &bpb);
 
     process_directory_area();
 }

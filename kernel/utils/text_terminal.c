@@ -106,7 +106,7 @@ void scroll()
 
 }
 
-void print_string(char *string, int len) {
+void print(char *string, int len) {
     int i = 0;
 
     for (i=0; i < len; i++) {
@@ -120,6 +120,7 @@ void print_string(char *string, int len) {
                 terminal.y++;
             }
             terminal.x=0;
+            continue;
         }
 
         // check if max width reached

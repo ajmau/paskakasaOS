@@ -28,20 +28,20 @@ error:
 continue:
     xchg bx, bx
 
-    mov ax, 0x4F02	; set VBE mode
-    mov bx, 0x4117	; VBE mode number; notice that bits 0-13 contain the mode number and bit 14 (LFB) is set and bit 15 (DM) is clear.
-    int 0x10			; call VBE BIOS
-    cmp ax, 0x004F	; test for error
-    jne error
+   mov ax, 0x4F02	; set VBE mode
+   mov bx, 0x4117	; VBE mode number; notice that bits 0-13 contain the mode number and bit 14 (LFB) is set and bit 15 (DM) is clear.
+   int 0x10			; call VBE BIOS
+   cmp ax, 0x004F	; test for error
+   jne error
 
-    xchg bx, bx
-    mov ax, 0x4F01
-    mov cx,  0x117
-    mov di, vbe_info_structure
-    int 0x10
-    cmp ax, 0x004F	; test for error
-    jne error
-    xchg bx, bx
+   xchg bx, bx
+   mov ax, 0x4F01
+   mov cx,  0x117
+   mov di, vbe_info_structure
+   int 0x10
+   cmp ax, 0x004F	; test for error
+   jne error
+   xchg bx, bx
 
     ; enable A20 line
     in al, 0x92

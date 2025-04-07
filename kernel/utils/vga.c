@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <mem.h>
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -53,14 +54,6 @@ void newline()
 
 void write_char(char c)
 {
-    if (c == 'x') {
-        position.x = 0;
-        if (position.y != 25) {
-            position.y++;
-        }
-        return; 
-    }
-  
     if (position.x == 80) {
         position.x = 0;
         if (position.y != 25) {
@@ -93,4 +86,17 @@ void write_message(char *message, uint32_t len, uint32_t line)
     for (i=0; i < len; i++) {
         write_char(message[i]);
     }
+
+    position.x =0;
+    position.y++;
+}
+
+void write_hex(uint64_t hex)
+{
+    char buffer[50];
+    memset(buffer,0,50);
+
+    itoa(hex, buffer, 50);
+
+    write_message(buffer, strlen(buffer), 0);
 }

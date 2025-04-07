@@ -3,5 +3,6 @@
 
 void init_vga();
 void write_message(char *message, uint32_t len, uint32_t line);
+void write_hex(uint64_t);
 
 #endif

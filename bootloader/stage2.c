@@ -20,6 +20,8 @@
 
 #define PARTITION_START 0x800
 
+#define KERNEL_ADDR 0xFFFFFFFF80000000
+
 uint8_t process_directory_area();
 
 uint8_t strcmp(char *str1, char *str2, size_t len);
@@ -34,6 +36,8 @@ static inline uint16_t inw(uint16_t port);
 void read_data(uint8_t *, uint32_t);
 void log(char *msg);
 void* memmove(void* dstptr, const void* srcptr, size_t size);
+void set_cr3(uint64_t new_cr3);
+void map_kernel();
 
 // bios parameter block
 struct BPB {
@@ -109,6 +113,16 @@ int clusters = 0;
 
 void parse_bpb(uint8_t *bytes, struct BPB *bpb);
 
+static __attribute__((aligned(4096))) uint64_t pml4[512];
+static __attribute__((aligned(4096))) uint64_t pud[512];
+static __attribute__((aligned(4096))) uint64_t pmd[512];
+static __attribute__((aligned(4096))) uint64_t pt[512];
+static __attribute__((aligned(4096))) uint64_t pudlow[512];
+static __attribute__((aligned(4096))) uint64_t pmdlow[512];
+static __attribute__((aligned(4096))) uint64_t ptlow[512];
+
+
+
 __attribute__((noreturn))
 void loader_main(uint32_t vesa, uint32_t memorymap) {
 
@@ -121,6 +135,8 @@ void loader_main(uint32_t vesa, uint32_t memorymap) {
     for (i = 0; i < 512; i++) {
         data[i] = 0;
     }
+
+    map_kernel();
 
     read_data(buffer, PARTITION_START);
     memmove((uint8_t*)&bpb, &buffer, sizeof(struct BPB));
@@ -158,7 +174,7 @@ void loader_main(uint32_t vesa, uint32_t memorymap) {
 
     uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (cluster - 2) * bpb.sectors_per_cluster;
 
-    read_data((uint8_t*)0x100000, clusterdataLBA);
+    read_data((uint8_t*)KERNEL_ADDR, clusterdataLBA);
 
     uint32_t next  =  cluster;
     int  memIndex = 1;
@@ -171,7 +187,7 @@ void loader_main(uint32_t vesa, uint32_t memorymap) {
         uint32_t clusterdataLBA = PARTITION_START + bpb.reserverd_sectors + (bpb.number_of_fats * bpb.sectors_per_fat) + (next - 2) * bpb.sectors_per_cluster;
 
 
-        uint64_t address = 0x100000 + (memIndex*0x200);
+        uint64_t address = KERNEL_ADDR + (memIndex*0x200);
         read_data((uint8_t*)address, clusterdataLBA);
         //log(filedata);
 
@@ -179,7 +195,7 @@ void loader_main(uint32_t vesa, uint32_t memorymap) {
     } 
     __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
     // Jump to kernel code loaded from disk
-    void (*kernel_entry)(uint32_t, uint32_t) = (void (*)(uint32_t, uint32_t))0x100000;
+    void (*kernel_entry)(uint32_t, uint32_t) = (void (*)(uint32_t, uint32_t))KERNEL_ADDR;
     kernel_entry(vesa, memorymap);
 
     while (1) {
@@ -243,6 +259,7 @@ uint32_t read_nextcluster(uint32_t *fattable, uint32_t cluster)
 }
 
 
+// so horrible and funny function that im keeping it
 void parse_bpb(uint8_t *bytes, struct BPB *bpb) {
     bpb->firstBytes[0] = *bytes++;
     bpb->firstBytes[1] = *bytes++;
@@ -372,3 +389,40 @@ void* memmove(void* dstptr, const void* srcptr, size_t size) {
 	}
 	return dstptr;
 }
+
+void set_cr3(uint64_t new_cr3) {
+    __asm__ volatile(
+        "mov %0, %%cr3"  // Load new page table address into CR3
+        :
+        : "r" (new_cr3)
+        : "memory"
+    );
+}
+
+void map_kernel()
+{
+    for (int i = 0; i < 512; i++) {
+        pml4[i] = 0;
+        pud[i] = 0;
+        pmd[i] = 0;
+        pt[i] = 0;
+        pudlow[i] = 0;
+        pmdlow[i] = 0;
+        ptlow[i] = 0;
+    }
+
+    pml4[511] = ((uint64_t)pud & 0xFFFFFFFFFF000) | 3;
+    pml4[0] = ((uint64_t)pudlow & 0xFFFFFFFFFF000) | 3;
+    pudlow[0] = ((uint64_t)pmdlow & 0xFFFFFFFFFF000) | 3;
+    pud[510] = ((uint64_t)pmd & 0xFFFFFFFFFF000) | 3;
+    pmd[0] = ((uint64_t)pt & 0xFFFFFFFFFF000) | 3;
+    pmdlow[0] = ((uint64_t)ptlow & 0xFFFFFFFFFF000) | 3;
+
+    for (int i = 0; i < 512; i++) { 
+        pt[i]  = (i * 0x1000) | 0b10000011;
+        ptlow[i]  = (i * 0x1000) | 0b10000011;
+    }
+
+    set_cr3((uint64_t)pml4);
+}
+

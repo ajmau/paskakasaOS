@@ -1,27 +1,30 @@
 #include <interrupts.h>
 #include <text_terminal.h>
+#include <portio.h>
 #include <stddef.h>
 
 struct interrupt_descriptor idt[256];
 extern char vector_0_handler[];
+
+void log(char *msg);
+
 
 void interrupt_general_handler(cpu_status_t* context)
 {
     switch (context->vector_number)
     {
         case 0x13:
-            print_string("GENERAL PROTECTION FAULT\n", 25);
             asm ("hlt");
             break;
         case 0x14:
-            print_string("PAGE FAULT\n", 11);
+            //log("PAGE FAULT\n");
             asm ("hlt");          
             break;
         case 0x123:
             //log("yykaakoo\n");
             break;
         default:
-            print_string("unexpected interrupt.\n", 22);
+            //log("Interrupted fug\n");
             asm  ("hlt");
             break;
     }
@@ -61,4 +64,12 @@ void setup_interrupts()
 
     load_idt(&idt);
 
+}
+void log(char *msg) {
+    const uint16_t COM1 = 0x3f8;
+
+    while (*msg != '\0') {
+        outb(COM1, *msg);
+        msg++;
+    }
 }

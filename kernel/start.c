@@ -4,12 +4,13 @@
 #include <mem.h>
 #include <pmm.h>
 #include <vmm.h>
+#include <alloc.h>
 #include <vesa.h>
+#include <vga.h>
 #include <fat32.h>
 #include <text_terminal.h>
 
 void log(char *msg);
-char * itoa( int value, char * str, int base );
 void new_page_table(uint32_t addr);
 void flush_tlb_all(uint64_t);
 void identity_map_1gb();
@@ -17,84 +18,78 @@ __attribute__((aligned(4096))) uint64_t pml4[512];
 __attribute__((aligned(4096))) uint64_t pud[512];
 __attribute__((aligned(4096))) uint64_t pmd[512];
 __attribute__((aligned(4096))) uint64_t pmd2[512];
+__attribute__((aligned(16))) uint8_t  stack[4096];
+
 
 void start(uint32_t memorymaps, uint32_t vesa)
 {
-    init_pmm(memorymaps);
+    uint64_t rsp;
+    uint64_t rbp;
 
+    __asm__ volatile (
+        "mov %%rsp, %0\n"  
+        "mov %%rbp, %1\n"  
+        : "=r" (rsp), "=r" (rbp)  
+        :                       
+        : "memory"               
+    );
+
+    rsp = (uint64_t)0xFFFFFFFF80000000+rsp;
+    rbp = (uint64_t)0xFFFFFFFF80000000+rbp;
+
+     __asm__ volatile (
+        "mov %0, %%rsp\n"
+        :
+        : "r"(rsp)
+        : "rsp"
+    ); 
+    __asm__ volatile (
+        "mov %0, %%rbp\n"
+        :
+        : "r"(rbp)
+        : "rbp"
+    ); 
+
+
+   //init_vga();
+    init_pmm(memorymaps);
     init_vesa(vesa);
+
+     
     uint32_t fb = get_framebuffer();
+
+    setup_interrupts();
 
     init_paging(fb);
     // read font file from disk
+    uint64_t *mem = (uint64_t*)pmm_kallocate();
     init_fat();
-
-    uint64_t *mem = (uint64_t*)alloc(10);
     read_file("FONT    PSF", (void*)mem);
     init_text_terminal(mem);
+
 
     draw_rectangle(150, 100, 100, 100);
     draw_rectangle(300, 400, 50, 100);
 
-    setup_interrupts();
-
     char totalmsg[] = "Total memory: ";
     char usablemsg[] = "Usable memory: ";
-    uint64_t total = get_total_memory();
-    uint64_t usable = get_usable_memory();
+    uint32_t total = get_total_memory();
+    uint32_t usable = get_usable_memory();
 
     usable = usable / (1024*1024);
     total = total / (1024*1024);
 
-    char sizeBuffer[100];
-    itoa(total, sizeBuffer, 10);
+    install_heap();
 
-    print_string(totalmsg, strlen(totalmsg));
-    print_string(sizeBuffer, strlen(sizeBuffer));
-    print_string("MB\n", 3);
+    uint64_t *a = (uint64_t*)kalloc(sizeof(uint64_t)*1);
+    *a = 10;
+    //*(a+1) = 20;
+    uint64_t *b = (uint64_t*)kalloc(sizeof(uint64_t)*2);
+    *b  = 123;
+    uint64_t *c = (uint64_t*)kalloc(sizeof(uint64_t)*3);
+    *c = 99999;
 
-    itoa(usable, sizeBuffer, 10);
-    print_string(usablemsg, strlen(usablemsg));
-    print_string(sizeBuffer, strlen(sizeBuffer));
-    print_string("MB\n", 3);
+    asm("nop");
 
     while (1) {}
-}
-
-char * itoa( int value, char * str, int base )
-{
-    char * rc;
-    char * ptr;
-    char * low;
-    // Check for supported base.
-    if ( base < 2 || base > 36 )
-    {
-        *str = '\0';
-        return str;
-    }
-    rc = ptr = str;
-    // Set '-' for negative decimals.
-    if ( value < 0 && base == 10 )
-    {
-        *ptr++ = '-';
-    }
-    // Remember where the numbers start.
-    low = ptr;
-    // The actual conversion.
-    do
-    {
-        // Modulo is negative for negative value. This trick makes abs() unnecessary.
-        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + value % base];
-        value /= base;
-    } while ( value );
-    // Terminating the string.
-    *ptr-- = '\0';
-    // Invert the numbers.
-    while ( low < ptr )
-    {
-        char tmp = *low;
-        *low++ = *ptr;
-        *ptr-- = tmp;
-    }
-    return rc;
 }
