@@ -194,6 +194,8 @@ void loader_main(uint32_t vesa, uint32_t memorymap) {
     memIndex++;
     } 
     __asm__ volatile ("xchg %%bx, %%bx" ::: "bx");
+
+    // TODO: setup higher half stack here
     // Jump to kernel code loaded from disk
     void (*kernel_entry)(uint32_t, uint32_t) = (void (*)(uint32_t, uint32_t))KERNEL_ADDR;
     kernel_entry(vesa, memorymap);

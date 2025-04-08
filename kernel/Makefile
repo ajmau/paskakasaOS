@@ -17,7 +17,8 @@ SRCS = start.c \
        storage/ata_pio.c 
 
 ASM_SRCS = interrupts/interrupt_vectors.asm \
-           interrupts/stub.asm
+           interrupts/stub.asm \
+           load_gdt.asm
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/$(notdir %.o))
 ASMOBJS = $(ASM_SRCS:%.asm=$(BUILD_DIR)/$(notdir %.o))

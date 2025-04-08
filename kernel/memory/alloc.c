@@ -18,6 +18,7 @@ uint64_t heap_size;
     TODO:
     - freeing blocks
     - checks for if heap is full
+    - heap uses arbitrary addresses, update it to use pmm/vmm
 */
 
 void install_heap()
@@ -55,14 +56,14 @@ block_t *split_block(block_t *ptr, int n)
 void *kalloc(int n)
 {
     // check if free block pointers contains large enough block
-    if (free_ptr->status == BLOCK_FREE && free_ptr->size => n) {
+    if (free_ptr->status == BLOCK_FREE && free_ptr->size > n) {
         return (void*)(split_block(free_ptr, n)+1);
     }
 
     // if free pointer points to too small, block search linked list for large enough block
     block_t *ptr = heap_start;
     while (ptr != 0x0) {
-        if (ptr->status  == BLOCK_FREE && ptr->size => n) {
+        if (ptr->status  == BLOCK_FREE && ptr->size > n) {
             return (void*)(split_block(ptr, n)+1);
         }
         ptr = ptr->next;

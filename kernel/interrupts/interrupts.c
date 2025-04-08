@@ -5,6 +5,7 @@
 
 struct interrupt_descriptor idt[256];
 extern char vector_0_handler[];
+extern void load_gdt();
 
 void log(char *msg);
 
@@ -17,7 +18,7 @@ void interrupt_general_handler(cpu_status_t* context)
             asm ("hlt");
             break;
         case 0x14:
-            //log("PAGE FAULT\n");
+            print("PAGE FAULT\n");
             asm ("hlt");          
             break;
         case 0x123:

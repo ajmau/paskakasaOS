@@ -106,8 +106,10 @@ void scroll()
 
 }
 
-void print(char *string, int len) {
+void print(char *string) {
     int i = 0;
+
+    int len = strlen(string);
 
     for (i=0; i < len; i++) {
 

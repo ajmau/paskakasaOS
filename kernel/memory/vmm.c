@@ -123,6 +123,7 @@ void init_paging(uint32_t framebuffer)
     int i;
     for (i = 0; i < 3200; i++) {
         map_page(start + (i * 0x1000), i*0x1000);
+        //map_page((i * 0x1000), i*0x1000);
         map_page(framebuffer + (i * 0x1000), framebuffer + (i * 0x1000));
     }
 

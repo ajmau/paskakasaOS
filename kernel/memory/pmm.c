@@ -28,12 +28,18 @@ pmeminfo_t pmeminfo;
 
 extern uint64_t kernel_end;
 extern uint64_t kernel_start;
+extern uint64_t stack_top;
+extern uint64_t stack_bottom;
+uint64_t stacktop;
+uint64_t stackbottom;
 
 void init_pmm(uint32_t e820map)
 {
     int foundMemoryArea = 0;
     uint64_t start = (uint64_t)&kernel_start;
     uint64_t end = (uint64_t)&kernel_end;
+    stacktop = (uint64_t)&stack_top;
+    stackbottom = (uint64_t)&stack_bottom;
     uint64_t klength = end-start;
     // dont hard code this
     uint64_t kphys_start = (uint64_t)0x100000;
@@ -62,6 +68,7 @@ void init_pmm(uint32_t e820map)
                 pool.length = entry->region_length;
                 foundMemoryArea++;
             }
+
         }
     }
 
@@ -82,7 +89,9 @@ uint64_t pmm_allocate()
         if (pool.bitmap[i] == 0x0) {
             pool.bitmap[i] = 0x1;
 
-            return pool.base + (i * PAGESIZE);
+            uint64_t ret = pool.base + (i * PAGESIZE);
+
+            return ret;
         }
     }
 
