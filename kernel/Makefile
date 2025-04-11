@@ -3,6 +3,8 @@ CFLAGS = -I./include -g -m64 -ffreestanding -nostdlib -target x86_64-unknown-non
 BUILD_DIR = build
 
 SRCS = start.c \
+       acpi.c  \
+       apic.c  \
        interrupts/interrupts.c \
        memory/pmm.c \
        memory/vmm.c \

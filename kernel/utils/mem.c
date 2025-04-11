@@ -42,7 +42,7 @@ void* memset(void *str, int c, size_t n) {
 	return str;
 }
 
-
+/*
 char * itoa( uint32_t value, char * str, int base )
 {
     char * rc;
@@ -80,3 +80,4 @@ char * itoa( uint32_t value, char * str, int base )
     }
     return rc;
 }
+    */

@@ -30,9 +30,8 @@ mov dl, [driveNumber]
 mov bx, 0x7e00
 int 0x13
 
-
 mov ah, 2
-mov al, 10
+mov al, 7
 mov ch, 0
 mov cl, 4
 mov dh, 0

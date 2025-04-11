@@ -50,5 +50,6 @@ typedef struct idtr
 } __attribute__((packed)) idtr_t;
 
 void setup_interrupts();
+int get_val();
 
 #endif

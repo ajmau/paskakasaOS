@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <mem.h>
 #include <vga.h>
+#include <text_terminal.h>
 
 #define PAGESIZE 4096
 
@@ -32,6 +33,16 @@ extern uint64_t stack_top;
 extern uint64_t stack_bottom;
 uint64_t stacktop;
 uint64_t stackbottom;
+
+void pmm_print_info()
+{
+    print("[PMM] region start: ");
+    print_hex(pool.base);
+    print("[PMM] region length: ");
+    print_hex(pool.length);   
+    print("[PMM] region end: ");
+    print_hex(pool.base+pool.length);
+}
 
 void init_pmm(uint32_t e820map)
 {
@@ -71,12 +82,11 @@ void init_pmm(uint32_t e820map)
 
         }
     }
-
     pool.pages = pool.length / 0x1000;
     for (i = 0; i  < 100; i++) {
         pool.bitmap[i] = 0;
     }
-    
+
 
 }
 

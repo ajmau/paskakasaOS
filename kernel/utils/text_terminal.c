@@ -15,6 +15,7 @@ typedef struct terminal_row {
     uint32_t length;
 } terminal_row_t;
 
+int itoa(uint64_t value, char *sp, int radix);
 
 typedef struct PSFv2 {
     uint32_t magic;
@@ -49,8 +50,8 @@ void render_glyph(uint8_t *glyph, int x, int y) {
 
 void clear_glyph(int x, int y) {
     // Assuming 8x16 pixel display
-    for (int row = 0; row < 16; row++) {
-        for (int col = 0; col < 8; col++) {
+    for (int row = 0; row <= 16; row++) {
+        for (int col = 0; col <= 8; col++) {
                 CLEAR_PIXELP(x + col, y + row);
         }
     }
@@ -106,10 +107,10 @@ void scroll()
 
 }
 
-void print(char *string) {
+void printcount(char *string, int len) {
     int i = 0;
 
-    int len = strlen(string);
+    //int len = strlen(string);
 
     for (i=0; i < len; i++) {
 
@@ -144,6 +145,46 @@ void print(char *string) {
         terminal.x++;
 
     }
+}
+
+void print(char* str) {
+    printcount(str, strlen(str));
+}
+
+void printxy(char *str, int x, int y) {
+    int len = strlen(str);
+
+    for (int i = 0; i < len; i++) {
+        clear_glyph(i+x*header.width, y*header.height);
+    }
+
+    for (int i = 0; i < len; i++) {
+        print_char(str[i], x+i, y);
+    }
+}
+
+void print_int_xy(int num, int x, int y)
+{
+    char buffer[40];
+    int n = itoa(num, buffer, 10);
+    printxy(buffer, x, y);
+}
+
+void print_int(uint64_t hex)
+{
+    char buffer[40];
+    int n = itoa(hex, buffer, 10);
+    printcount(buffer, n);
+    print("\n");
+}
+
+void print_hex(uint64_t hex)
+{
+    print("0x");
+    char buffer[40];
+    int n = itoa(hex, buffer, 16);
+    printcount(buffer, n);
+    print("\n");
 }
 
 uint16_t *install_font(uint64_t* font)
@@ -188,4 +229,33 @@ void init_text_terminal(uint64_t* font)
     terminal.width = (vesa_info->width/header.width);
     terminal.color = 0x000f00;
 
+    for (int i  = 0; i < 96; i++) {
+        memset(lines[i].characters, 0, 128);
+        lines[i].length = 0;
+    }
+
+}
+
+int itoa(uint64_t value, char *sp, int radix)
+{
+        char tmp[21]; // 20 digits max for base 10 + 1 for safety
+    char *tp = tmp;
+    int i;
+    uint64_t v = value;
+
+    if (radix < 2 || radix > 36)
+        return 0; // invalid radix
+
+    do {
+        i = v % radix;
+        v /= radix;
+        *tp++ = (i < 10) ? i + '0' : i + 'a' - 10;
+    } while (v);
+
+    int len = tp - tmp;
+
+    while (tp > tmp)
+        *sp++ = *--tp;
+
+    return len;
 }

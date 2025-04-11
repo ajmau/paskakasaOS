@@ -121,9 +121,9 @@ void init_paging(uint32_t framebuffer)
     uint64_t start = (uint64_t)&kernel_start;
     
     int i;
-    for (i = 0; i < 3200; i++) {
+    for (i = 0; i < 6400; i++) {
         map_page(start + (i * 0x1000), i*0x1000);
-        //map_page((i * 0x1000), i*0x1000);
+        map_page((i * 0x1000), i*0x1000);
         map_page(framebuffer + (i * 0x1000), framebuffer + (i * 0x1000));
     }
 

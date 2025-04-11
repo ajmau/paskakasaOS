@@ -96,7 +96,7 @@ void write_hex(uint64_t hex)
     char buffer[50];
     memset(buffer,0,50);
 
-    itoa(hex, buffer, 50);
+    //itoa(hex, buffer, 50);
 
     write_message(buffer, strlen(buffer), 0);
 }
