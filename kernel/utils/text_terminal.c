@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include <vesa.h>
 #include <mem.h>
+#include <spinlock.h>
+
+spinlock_t terminal_lock;
 
 typedef struct text_terminal {
     uint32_t x;
@@ -49,7 +52,6 @@ void render_glyph(uint8_t *glyph, int x, int y) {
 }
 
 void clear_glyph(int x, int y) {
-    // Assuming 8x16 pixel display
     for (int row = 0; row <= 16; row++) {
         for (int col = 0; col <= 8; col++) {
                 CLEAR_PIXELP(x + col, y + row);
@@ -60,6 +62,8 @@ void clear_glyph(int x, int y) {
 
 void print_char(char c, int x, int y)
 {
+//    asm("cli");
+
     switch (c) {
         case -61:
             render_glyph(glyphs[228], x*header.width, y*header.height);
@@ -67,11 +71,14 @@ void print_char(char c, int x, int y)
         default:
             render_glyph(glyphs[c], x*header.width, y*header.height);
     }
+
+//    asm("sti");
 }
 
 
 void scroll()
 {
+    asm("cli");
     int tx = 0;
     int ty = 0;
     int x=0;
@@ -105,6 +112,7 @@ void scroll()
         tx=0;
     }
 
+    asm("sti");
 }
 
 void printcount(char *string, int len) {

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <interrupts.h>
+#include <scheduler.h>
 #include <acpi.h>
 #include <apic.h>
 #include <mem.h>
@@ -26,7 +27,7 @@ extern uint64_t stack_top;
 
 uint64_t* mem;
 
-uint16_t sounds[5] = { 523, 440, 380, 680, 523 };
+//uint16_t sounds[5] = { 523, 440, 380, 680, 523 };
 
 void start(uint32_t m, uint32_t v)
 {
@@ -66,6 +67,7 @@ void start(uint32_t m, uint32_t v)
 
     uint32_t fb = get_framebuffer();
     init_paging(fb);
+    install_heap();
 
 //    pmm_print_info();
     draw_rectangle(150, 100, 100, 100);
@@ -83,13 +85,27 @@ void start(uint32_t m, uint32_t v)
     print_hex((uint64_t)apic->local_apic);
     print("IO apic: ");
     print_hex((uint64_t)apic->io_apic);
-
-    for (int x=0; x < 10; x++) {
-        printxy("asd", 80, 0);
-    }
+    
+    init_scheduler();
 
     init_apic(apic->local_apic, apic->io_apic);
 
+    /*
+    int* a = (int*)kalloc(sizeof(int));
+    *a = 10;
+    print("A = ");
+    print_hex(*a);
+    print("&A = ");
+    print_hex((uint64_t)a);
+
+    int* b = (int*)kalloc(sizeof(int));
+    *b = 20;
+    print("B = ");
+    print_hex(*b);
+    print("&B = ");
+    print_hex((uint64_t)b);
+    */
+    /*
     while (1) {
         for (int y = 0; y < 5; y++) {
             int val = get_val();
@@ -99,10 +115,18 @@ void start(uint32_t m, uint32_t v)
 
         }
     }
+        */
+    /*
+    for (int x = 0; x < 1000; x++)  {
+        print("X: ");
+        print_hex(x);
+    }
+    */
 
     while (1) {}
 }
 
+/*
 static void play_sound(uint32_t nFrequence) {
  	uint32_t Div;
  	uint8_t tmp;
@@ -119,3 +143,4 @@ static void play_sound(uint32_t nFrequence) {
  		outb(0x61, tmp | 3);
  	}
 }
+*/

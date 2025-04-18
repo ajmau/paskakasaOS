@@ -188,7 +188,7 @@ jmp interrupt_stub
 
 align 16
 vector_32_handler:
-push $0
+push $6969
 push $32
 jmp interrupt_stub
 

@@ -5,6 +5,9 @@ BUILD_DIR = build
 SRCS = start.c \
        acpi.c  \
        apic.c  \
+       scheduler.c  \
+       process.c  \
+       spinlock.c  \
        interrupts/interrupts.c \
        memory/pmm.c \
        memory/vmm.c \
@@ -20,7 +23,8 @@ SRCS = start.c \
 
 ASM_SRCS = interrupts/interrupt_vectors.asm \
            interrupts/stub.asm \
-           load_gdt.asm
+           load_gdt.asm        \
+           context_switch.asm
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/$(notdir %.o))
 ASMOBJS = $(ASM_SRCS:%.asm=$(BUILD_DIR)/$(notdir %.o))

@@ -140,8 +140,8 @@ void init_apic(uint64_t* a,  uint64_t*b) {
     APIC_REG(APIC_TIMER_DIV) = 0x3;
     // Set LVT Timer: vector = 0x20, mode = periodic (bit 17)
     APIC_REG(APIC_LVT_TIMER) = 0x20 | (1 << 17);
-    // Set initial count (frequency control)
-    APIC_REG(APIC_TIMER_INIT_COUNT) = 100000;
+    // Set initial count (frequency controjiuul)
+    APIC_REG(APIC_TIMER_INIT_COUNT) = 10000;
 
 
 

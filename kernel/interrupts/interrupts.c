@@ -4,6 +4,7 @@
 #include <portio.h>
 #include <stddef.h>
 #include <apic.h>
+#include <scheduler.h>
 
 struct interrupt_descriptor idt[256];
 extern char vector_0_handler[];
@@ -33,17 +34,17 @@ void page_fault_handler(cpu_status_t* context)
     uint64_t value;
     __asm__ volatile ("mov %%cr2, %0" : "=r"(value));
 
-    print("CR3: ");
+    print("CR2: ");
     print_hex(value);
 
-//    if (context->error_code & (1 << 0)) {
- //       print("Mapping cr3\n");
+    if (context->error_code & (1 << 0)) {
+        print("Mapping cr3\n");
         map_page(value, value);
- //   } else  {
-   //     print("Halting system\n");
-    //    asm("HLT");
-  //  }
-    asm("hlt");
+    } else  {
+        print("Halting system\n");
+        asm("HLT");
+    }
+    //asm("hlt");
     return;
 
 }
@@ -95,34 +96,46 @@ void handle_timer()
     print_int(val);
     val++;
 
+    //schedule();
+
     APIC_REG(APIC_EOI) = 0;
 
 }
 
-void interrupt_general_handler(cpu_status_t* context)
+cpu_status_t* interrupt_general_handler(cpu_status_t* context)
 {
+    save_context(context);
     switch (context->vector_number)
     {
         case 0x8:
         case 0x20:
         case 0x32:
-            handle_timer();
+            APIC_REG(APIC_EOI) = 0;
+            val++;
+            uint64_t ctx = (uint64_t)schedule(context);
+
+            //asm("mov %0, %%rsp" : : "r"(ctx));
+
+           // handle_timer();
+            return (cpu_status_t*)ctx;
             break;
         case 0x13:
-            print("General protection fault!!!\n");
-            panic(context);
+            //print("General protection fault!!!\n");
+            //panic(context);
             break;
         case 0x14:
-            page_fault_handler(context);
+            //page_fault_handler(context);
+            asm("hlt");
             break;
         case 0x123:
             //log("yykaakoo\n");
             break;
         default:
-            print("Default interrupt handler\n");
-            print_hex(context->vector_number);
+            //print("Default interrupt handler\n");
+            //print_hex(context->vector_number);
             break;
     }
+    return context;
 }
 
 void set_idt_entry(uint8_t vector, void* handler, uint8_t dpl)

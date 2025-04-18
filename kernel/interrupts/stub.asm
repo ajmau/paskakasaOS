@@ -2,6 +2,7 @@ extern interrupt_general_handler
 extern interrupt_stub
 
 interrupt_stub:
+    cli
     push    rax
     push    rbx
     push    rcx
@@ -19,7 +20,8 @@ interrupt_stub:
     push    r15
 
     mov rdi, rsp
-    call    interrupt_general_handler
+    call interrupt_general_handler
+    mov rsp, rax 
 
     pop     r15
     pop     r14
@@ -40,4 +42,5 @@ interrupt_stub:
     ; Remove the vector number + error code
     add     rsp, 16
 
+    sti
     iretq
